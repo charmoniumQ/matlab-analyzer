@@ -1,26 +1,13 @@
+import json
 import typer
 import antlr4
 # https://github.com/antlr/antlr4/blob/master/doc/python-target.md
 from .gen.MATLABLexer import MATLABLexer
 from .gen.MATLABParser import MATLABParser
+from . import util
 
 
 app = typer.Typer()
-
-escape_chars = {
-    "\n": "\\n",
-    "\r": "\\r",
-    "\t": "\\t",
-    "\v": "\\v",
-    "\\": "\\\\",
-    "<": "\\<",
-    ">": "\\>",
-}
-def escape(string):
-    for escape_char, escape_seq in escape_chars.items():
-        string = string.replace(escape_char, escape_seq)
-    return string
-
 
 @app.command()
 def tokenize(
@@ -40,7 +27,7 @@ def tokenize(
     while True:
         token = lexer.nextToken()
         type_ = token_type_map.get(token.type, "literal")
-        print(type_, escape(token.text))
+        print(f"{type_} {json.dumps(token.text)}")
         if token.type == token.EOF:
             break
 
@@ -58,8 +45,25 @@ def parse(
     lexer = MATLABLexer(input_stream)
     stream = antlr4.CommonTokenStream(lexer)
     parser = MATLABParser(stream)
-    tree = parser.source()
-    import IPython; IPython.embed()
+
+    stack = [parser.source()]
+    depth = 0
+    while stack:
+        node = stack.pop()
+        if isinstance(node, antlr4.tree.Tree.TerminalNodeImpl):
+            print(f"{depth * ' '}{json.dumps(node.getText())}")
+        elif isinstance(node, str):
+            depth -= 1
+            print(f"{depth * ' '})")
+        else:
+            rule_name = MATLABParser.ruleNames[node.getRuleIndex()]
+            if node.children:
+                print(f"{depth * ' '}({rule_name}")
+                stack.append("end")
+                stack.extend(node.children[::-1])
+                depth += 1
+            else:
+                print(f"{depth * ' '}({rule_name})")
 
 
 def main() -> None:

@@ -85,14 +85,19 @@ a@b();
 
 %%%%%%%%%%
 
+% `...` is line continuation character
 a - ...
 b;
 
 %%%%%%%%%%
 
-% Note, that no line-continuation needed in the case of arrays.
+% No line-continuation needed in the case of arrays.
 [
   a
 ]
 
 %%%%%%%%%%
+
+%{
+this is a block comment
+}

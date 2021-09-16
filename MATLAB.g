@@ -4,64 +4,59 @@ source: function_file | script_file;
 
 script_file: statement* EOF;
 
-function_file: function_block* EOF;
+function_file: function_block_rule* EOF;
 
 statement
-    : while_block
-    | for_block
-    | if_block
-    | try_block
-    | switch_block
-    | parfor_block
-    | parfor_parens_block
-    | function_block
-    | return_stmt
-    | break_stmt
-    | continue_stmt
-    | global_stmt
-    | expr_stmt
-    | assign_stmt
-    | statement_end
+    : 'while' expr statement_end block 'end' statement_end # while_block
+    | 'for' ident '=' expr statement_end block 'end' statement_end # for_block
+    | if_block_rule # if_block
+    | 'try' block 'catch' ident statement_end block 'end' statement_end # try_block
+    | switch_block_rule # switch_block
+    | parfor_block_rule # parfor_block
+    | function_block_rule # function_block
+    | 'return' statement_end # return_stmt
+    | 'break' statement_end # break_stmt
+    | 'continue' statement_end # continue_stmt
+    | 'global' ident_list_c statement_end # global_stmt
+    | expr statement_end # expr_stmt
+    | lhs_expr '=' expr statement_end # assign_stmt
+    | statement_end # empty_stmt
     ;
 
 block: statement*;
 
-while_block: 'while' expr statement_end block 'end' statement_end;
-
-for_block: 'for' ident '=' expr statement_end block 'end' statement_end;
-
-if_block: 'if' expr statement_end block ('elseif' expr statement_end block)* ('else' statement_end block)? 'end' statement_end;
-
-try_block: 'try' block 'catch' ident statement_end block 'end' statement_end;
-
-switch_block: 'switch' expr statement_end ('case' expr statement_end block)* ('otherwise' statement_end block)? 'end' statement_end;
-
-parfor_block: 'pafor' ident '=' expr ':' expr statement_end block 'end' statement_end;
-
-parfor_parens_block: 'parfor' '(' ident '=' expr ':' expr ',' expr ')' statement_end block 'end' statement_end;
-
-function_block
-    : 'function' ident '=' ident '(' ident_list ')' statement_end argument_validentation? block 'end' statement_end
-    | 'function' '[' ident_list ']' '=' ident '(' ident_list ')' statement_end argument_validentation? block 'end' statement_end
-    | 'function' ident '(' ident_list ')' statement_end argument_validentation? block 'end' statement_end
-    | 'function' ident '(' ident_list ')' statement_end
+if_block_rule
+    : 'if' expr statement_end
+        block
+      ('elseif' expr statement_end
+        block)*
+      ('else' statement_end
+        block)?
+      'end' statement_end
     ;
 
-argument_validentation: 'arguments' (ident '(' index_list ')' '{' ident_list '}')* 'end' statement_end;
+switch_block_rule
+    : 'switch' expr statement_end
+        ('case' expr statement_end
+          block)*
+        ('otherwise' statement_end
+          block)?
+      'end' statement_end
+    ;
 
-return_stmt: 'return' statement_end;
+parfor_block_rule
+    : 'pafor' ident '=' expr ':' expr statement_end block 'end' statement_end
+    | 'parfor' '(' ident '=' expr ':' expr ',' expr ')' statement_end block 'end' statement_end
+    ;
 
-break_stmt: 'break' statement_end;
+function_block_rule
+    : 'function' ident '=' ident '(' ident_list_c ')' statement_end argument_validentation? block 'end' statement_end
+    | 'function' '[' ident_list_c ']' '=' ident '(' ident_list_c ')' statement_end argument_validentation? block 'end' statement_end
+    | 'function' ident '(' ident_list_c ')' statement_end argument_validentation? block 'end' statement_end
+    | 'function' ident '(' ident_list_c ')' statement_end
+    ;
 
-continue_stmt: 'continue' statement_end;
-
-global_stmt: 'global' ident_list statement_end;
-
-assign_stmt: lhs_expr '=' expr statement_end;
-// This is a little more liberal than it should be.
-// A proper subset of exprs are valident on the LHS.
-
-expr_stmt: expr statement_end;
+argument_validentation: 'arguments' (ident '(' index_list ')' '{' ident_list_c '}')* 'end' statement_end;
 
 statement_end: ',' | ';' | nl;
 
@@ -77,55 +72,43 @@ lhs_array_elem: lhs_expr | '~';
 
 // See https://www.mathworks.com/help/matlab/matlab_prog/matlab-operators-and-special-characters.html#bvg3oy_-5
 expr
-    : expr bin_op expr
-    | pre_unary expr
-    | expr post_unary
-    | function_reference
-    | metaclass
-    | lambda_
-    | dotted_or_array_index_or_fn_call
-    | paren_expr
-    | cell_array
-    | array
-    | int_
-    | float_
-    | string
+    : expr bin_operator expr # bin_op
+    | pre_unary_operator expr # pre_unary
+    | expr post_unary_operator # post_unary
+    | '@' (ident | superclass_method) # fn_reference
+    | '?' ident # metaclass
+    | '@' '(' ident_list_c ')' expr # lambda_
+    | dots_or_call_rule # dots_or_call
+    | '(' expr ')' # parens_expr
+    | '{' expr_list_cs '}' # cell_array
+    | '[' expr_list_cs (';' expr_list_cs)* ']' # array
+    | int_rule # int_
+    | float_rule # float_
+    | string_rule # string
     ;
 
 // It's not documented anywhere, but trial and error shows
-// the target of a function-call or array-index cannot be a general expression;
+// the target of a fn-call or array-index cannot be a general expression;
 // It must be an ident or dotted ident.
 // For example,
-// `obj()()`, `(obj())()` are not valident, even if `obj()` is a function
+// `obj()()`, `(obj())()` are not valident, even if `obj()` is a fn
 // Likewise, the left-hand sidente of a dot cannot be a general expression;
-// it must be an ident, dotted ident, or function.
+// it must be an ident, dotted ident, or fn.
 // For example, 
 // `(obj).field` is not valident.
-// However, they do allow the special case of a function,
+// However, they do allow the special case of a fn,
 // `obj().field` to work.
 
-rest
-    : '.' ident rest?
-    | '.(' ident ')' rest?
-    | ('(' index_list ')' | '{' index_list '}') (('.' ident | '.(' ident ')') rest?)?
+dots_or_call_rest
+    : '.' ident dots_or_call_rest?
+    | '.(' ident ')' dots_or_call_rest?
+    | ('(' index_list ')' | '{' index_list '}') (('.' ident | '.(' ident ')') dots_or_call_rest?)?
     ;
-dotted_or_array_index_or_fn_call: (ident | superclass_method '(' expr_list ')') rest?;
+dots_or_call_rule: (ident | superclass_method '(' expr_list_c ')') dots_or_call_rest?;
 
 superclass_method: ident '@' ident;
 
-function_reference: '@' (ident | superclass_method);
-
-metaclass: '?' ident;
-
-lambda_: '@' '(' ident_list ')' expr;
-
-expr_list: (expr (',' expr)*)?;
-
-paren_expr: '(' expr ')';
-
-cell_array: '{' expr_list_cs '}';
-
-array: '[' expr_list_cs (';' expr_list_cs)* ']';
+expr_list_c: (expr (',' expr)*)?;
 
 expr_list_cs: (expr (','? expr)*)?;
 
@@ -133,10 +116,10 @@ index_list: (index_val (',' index_val)*)?;
 
 index_val: expr | ':' | 'end';
 
-ident_list: (ident (',' ident)*)?;
+ident_list_c: (ident (',' ident)*)?;
 
 // https://www.mathworks.com/help/matlab/matlab_prog/matlab-operators-and-special-characters.html#bvg3oy_-2
-bin_op
+bin_operator
     : '+'
     | '-'
     | '*'
@@ -160,26 +143,26 @@ bin_op
     | ':'
     ;
 
-pre_unary
+pre_unary_operator
     : '-'
     | '~'
     ;
 
-post_unary
+post_unary_operator
     : '\''
     | '.\''
     ;
 
-int_: INT;
+int_rule: INT;
 INT: [0-9]+;
 
-float_: FLOAT;
+float_rule: FLOAT;
 FLOAT
     : [0-9]+ '.' [0-9]*
     | '.' [0-9]+
     ;
 
-string: STRING+;
+string_rule: STRING+;
 STRING
     : '"' ~["]* '"'
     | '\'' ~[']* '\''
