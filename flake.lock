@@ -1,6 +1,40 @@
 {
   "nodes": {
+    "antlr4-python-grun": {
+      "inputs": {
+        "flake-utils": "flake-utils",
+        "nixpkgs": "nixpkgs"
+      },
+      "locked": {
+        "lastModified": 1631896124,
+        "narHash": "sha256-h0RSqDMn7DfyTJ47ODp3thibgu8vTHUUL/5TdXFPO1I=",
+        "owner": "charmoniumQ",
+        "repo": "antlr4-python-grun",
+        "rev": "c3912fe472928013b204a9017f09105db4adb0cd",
+        "type": "github"
+      },
+      "original": {
+        "owner": "charmoniumQ",
+        "repo": "antlr4-python-grun",
+        "type": "github"
+      }
+    },
     "flake-utils": {
+      "locked": {
+        "lastModified": 1631561581,
+        "narHash": "sha256-3VQMV5zvxaVLvqqUrNz3iJelLw30mIVSfZmAaauM3dA=",
+        "owner": "numtide",
+        "repo": "flake-utils",
+        "rev": "7e5bf3925f6fbdfaf50a2a7ca0be2879c4261d19",
+        "type": "github"
+      },
+      "original": {
+        "owner": "numtide",
+        "repo": "flake-utils",
+        "type": "github"
+      }
+    },
+    "flake-utils_2": {
       "locked": {
         "lastModified": 1631561581,
         "narHash": "sha256-3VQMV5zvxaVLvqqUrNz3iJelLw30mIVSfZmAaauM3dA=",
@@ -17,11 +51,25 @@
     },
     "nixpkgs": {
       "locked": {
-        "lastModified": 1631760783,
-        "narHash": "sha256-jO3rHExCOIzRc6LyQuNeTbYzbcYp5BnzUhXPmHupvA0=",
+        "lastModified": 1631895326,
+        "narHash": "sha256-GYaK96f2rzTLOyysrUf8Oky/GGi2FKv+QmdvnFtiVl8=",
         "owner": "NixOS",
         "repo": "nixpkgs",
-        "rev": "da33a585bb9c9f0e8567fa165229fe5eb343f070",
+        "rev": "184f67e4fd5a9b625c032016205d93cd40771f68",
+        "type": "github"
+      },
+      "original": {
+        "id": "nixpkgs",
+        "type": "indirect"
+      }
+    },
+    "nixpkgs_2": {
+      "locked": {
+        "lastModified": 1631887801,
+        "narHash": "sha256-YoUf5o246Ol5gIe5Z62g+eAHdN5WJfNBFuQKCH4EEsE=",
+        "owner": "NixOS",
+        "repo": "nixpkgs",
+        "rev": "01643e3d369629f60f6ca91cacabc18b76c0a17e",
         "type": "github"
       },
       "original": {
@@ -31,8 +79,9 @@
     },
     "root": {
       "inputs": {
-        "flake-utils": "flake-utils",
-        "nixpkgs": "nixpkgs"
+        "antlr4-python-grun": "antlr4-python-grun",
+        "flake-utils": "flake-utils_2",
+        "nixpkgs": "nixpkgs_2"
       }
     }
   },

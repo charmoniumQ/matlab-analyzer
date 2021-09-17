@@ -1,29 +1,31 @@
 {
   inputs = {
     flake-utils.url = "github:numtide/flake-utils";
+    antlr4-python-grun.url = "github:charmoniumQ/antlr4-python-grun";
   };
-  outputs = { self, nixpkgs, flake-utils }:
+  outputs = { self, nixpkgs, flake-utils, antlr4-python-grun }:
     flake-utils.lib.eachDefaultSystem (system:
       let
         pkgs = nixpkgs.legacyPackages.${system};
-        name = "matlab-analyzer";
+        name = "matlab-grammar";
       in
-        {
-        packages.${name} = pkgs.poetry2nix.mkPoetryApplication {
-          projectDir = ./.;
-        };
+      rec {
+        # packages.${name} = { };
+        # defaultPackage = packages.${name};
+        # apps.${name} = flake-utils.lib.mkApp { drv = packages.${name}; };
+        # defaultApp = apps.${name};
         devShell = pkgs.mkShell {
           buildInputs = [
-            (pkgs.poetry2nix.mkPoetryEnv {
-              projectDir = ./.;
-            })
-            pkgs.poetry
+            pkgs.python39
+            pkgs.python39Packages.pytest
+            pkgs.python39Packages.pytest-expect
+            pkgs.pipenv
+            # antlr4-python-grun
             pkgs.antlr4
             pkgs.jdk8
           ];
         };
-        defaultPackage = self.packages.${system}.${name};
-        defaultApp = self.packages.${system}.${name};
-        }
+
+      }
     );
 }
