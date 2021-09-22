@@ -1,6 +1,6 @@
 from pathlib import Path
 import os
-from typing import Tuple, Callable
+from typing import Tuple, Callable, Any
 import antlr4  # type: ignore
 import antlr4_grun.main as antlr4_grun_main  # type: ignore
 import pytest  # type: ignore
@@ -19,29 +19,36 @@ def built_grammar() -> Tuple[antlr4.Lexer, antlr4.Parser]:
     return antlr4_grun_main.get_lexer_parser(tmp_dir, "MATLAB")
 
 
+class BailErrorStrategy:
+    def syntaxError(self, *args: Any) -> None:
+        raise SyntaxError()
+
+    def reportContextSensitivity(self, *args) -> None:
+        pass
+
+    def reportAmbiguity(self, *args) -> None:
+        pass
+
+    def reportAttemptingFullContext(self, *args) -> None:
+        pass
+
+
 def lex_and_parse(
     built_grammar: Tuple[antlr4.Lexer, antlr4.Parser],
     source: str,
     rule: str,
 ) -> bool:
     Lexer, Parser = built_grammar
-    input_stream = antlr4.InputStream(source)
-    lexer = Lexer(input_stream)
-    stream = antlr4.CommonTokenStream(lexer)
-    parser = Parser(stream)
-    stack = [getattr(parser, rule)()]
-    while stack:
-        node = stack.pop()
-        if isinstance(node, antlr4.tree.Tree.TerminalNodeImpl):
-            pass
-        else:
-            if node.exception is not None:
-                break
-            children = [] if node.children is None else node.children
-            stack.extend(children[::-1])
+    lexer = Lexer(antlr4.InputStream(source))
+    parser = Parser(antlr4.CommonTokenStream(lexer))
+    parser.removeErrorListeners()
+    parser.addErrorListener(BailErrorStrategy())
+    try:
+        tree = getattr(parser, rule)()
+    except SyntaxError:
+        return False
     else:
         return True
-    return False
 
 
 valid_matlab_files = [

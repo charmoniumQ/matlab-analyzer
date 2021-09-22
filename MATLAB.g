@@ -18,12 +18,14 @@ statement
     | 'break' statement_end # break_stmt
     | 'continue' statement_end # continue_stmt
     | 'global' ident_list_c statement_end # global_stmt
+    | assign_stmt_rule # assign_stmt
     | expr statement_end # expr_stmt
-    | lhs_expr '=' expr statement_end # assign_stmt
     | statement_end # empty_stmt
     ;
 
 block: statement*;
+
+assign_stmt_rule: lhs_expr '=' expr statement_end;
 
 if_block_rule
     : 'if' expr statement_end
@@ -61,7 +63,7 @@ argument_validentation: 'arguments' (ident '(' index_list ')' '{' ident_list_c '
 statement_end: ',' | ';' | nl;
 
 lhs_expr
-    : ident ('.' (ident | '(' ident ')'))*
+    : ident ('.' ident | ('.(' | '.' '(') ident ')')*
     | lhs_expr '(' (index_val (',' index_val)*) ')'
     | lhs_expr '{' (index_val (',' index_val)*) '}'
     | '[' lhs_array_elem (',' lhs_array_elem)* ']'
@@ -80,7 +82,7 @@ expr
     | '@' '(' ident_list_c ')' expr # lambda_
     | dots_or_call_rule # dots_or_call
     | '(' expr ')' # parens_expr
-    | '{' expr_list_cs '}' # cell_array
+    | '{' expr_list_cs (';' expr_list_cs)* '}' # cell_array
     | '[' expr_list_cs (';' expr_list_cs)* ']' # array
     | int_rule # int_
     | float_rule # float_
@@ -160,6 +162,7 @@ float_rule: FLOAT;
 FLOAT
     : [0-9]+ '.' [0-9]*
     | '.' [0-9]+
+    | [0-9]+ ('.' [0-9]*)? 'e' [0-9]+
     ;
 
 string_rule: STRING+;

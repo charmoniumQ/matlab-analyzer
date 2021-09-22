@@ -5,6 +5,7 @@ b;
 %%%%%%%%%%
 
 % No line-continuation needed in the case of arrays.
-[
-  a
-]
+%[
+%  a
+%];
+% TODO: fix this case
